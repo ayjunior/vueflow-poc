@@ -1,0 +1,86 @@
+<div class="org-chart">
+  <div class="d-flex justify-content-end mb-2">
+    <button type="button" class="btn btn-sm btn-primary" @click="openAddForm('')">
+      + Adicionar unidade raiz
+    </button>
+  </div>
+
+  <div class="flow-wrapper border rounded shadow-sm">
+    <VueFlow
+      id="org-chart-flow"
+      v-model:nodes="nodes"
+      v-model:edges="edges"
+      :default-viewport="{ zoom: 0.8 }"
+      :min-zoom="0.1"
+      :max-zoom="2"
+      fit-view-on-init
+      @node-click="onNodeClick"
+    >
+      <template #node-org="{ id, data }">
+        <div class="org-node" :class="{ 'org-node--selected': id === selectedId }">
+          <div class="org-node__actions nodrag nopan">
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              title="Adicionar subordinada"
+              @click.stop="openAddForm(id)"
+            >+</button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              title="Editar"
+              @click.stop="openEditForm(id)"
+            >✎</button>
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              title="Remover"
+              @click.stop="removeNode(id)"
+            >✕</button>
+          </div>
+          <div class="org-node__sigla">{{ data.sigla }}</div>
+          <div class="org-node__nome">{{ data.nome }}</div>
+          <div class="org-node__simbolo">{{ data.simbolo }}</div>
+        </div>
+      </template>
+
+      <Background pattern-color="#aaa" :gap="16" />
+      <Controls />
+      <MiniMap pannable zoomable />
+    </VueFlow>
+  </div>
+
+  <div v-if="showForm" class="card mt-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">{{ formMode === 'add' ? 'Adicionar unidade' : 'Editar unidade' }}</h2>
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="form-label small">Unidade pai</label>
+          <select class="form-select form-select-sm" v-model="form.parentId">
+            <option value="">— (raiz)</option>
+            <option v-for="opt in parentOptions" :key="opt.id" :value="opt.id">
+              {{ opt.siglaUnidade }} — {{ opt.nomeUnidade }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Sigla</label>
+          <input type="text" class="form-control form-control-sm" v-model="form.siglaUnidade" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Nome da unidade</label>
+          <input type="text" class="form-control form-control-sm" v-model="form.nomeUnidade" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Símbolo</label>
+          <input type="text" class="form-control form-control-sm" v-model="form.simboloQuantidadeCargos" />
+        </div>
+      </div>
+      <p v-if="formError" class="text-danger small mt-2 mb-0">{{ formError }}</p>
+      <div class="mt-3 d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-primary" @click="saveForm">Salvar</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" @click="cancelForm">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
