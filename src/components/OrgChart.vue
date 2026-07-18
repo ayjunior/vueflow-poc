@@ -5,6 +5,7 @@ import { VueFlow, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
+import { Modal } from 'bootstrap'
 import { defaultChartData } from '../data/orgChartData'
 
 // Dimensões usadas para espaçar os nós na árvore
@@ -50,6 +51,10 @@ function emptyForm() {
   return { id: '', parentId: '', siglaUnidade: '', nomeUnidade: '', simboloQuantidadeCargos: '' }
 }
 
+function emptyFormErrors() {
+  return { parentId: '', siglaUnidade: '', nomeUnidade: '', simboloQuantidadeCargos: '' }
+}
+
 export default {
   name: 'OrgChart',
   components: { VueFlow, Background, Controls, MiniMap },
@@ -63,10 +68,13 @@ export default {
       nodes: [],
       edges: [],
       selectedId: null,
-      showForm: false,
       formMode: 'add',
       form: emptyForm(),
-      formError: '',
+      formErrors: emptyFormErrors(),
+      // Só uma unidade raiz (sem unidade pai) pode ficar com "Unidade pai" em
+      // branco; para as demais o campo é obrigatório.
+      allowRootParent: false,
+      modalInstance: null,
     }
   },
   computed: {
@@ -86,6 +94,15 @@ export default {
     // No carregamento inicial o Vue Flow pode medir os nós antes do child
     // estar totalmente pronto; força uma remedição após montar.
     this.$nextTick(() => this.updateNodeInternals())
+
+    this.modalInstance = new Modal(this.$refs.formModal)
+    // Cobre fechamento via ESC, clique no backdrop ou botão "x", que não
+    // passam por cancelForm()/saveForm().
+    this.$refs.formModal.addEventListener('hidden.bs.modal', this.resetForm)
+  },
+  beforeUnmount() {
+    this.$refs.formModal.removeEventListener('hidden.bs.modal', this.resetForm)
+    this.modalInstance?.dispose()
   },
   methods: {
     rebuild() {
@@ -144,37 +161,62 @@ export default {
 
     openAddForm(parentId) {
       this.formMode = 'add'
-      this.formError = ''
+      this.formErrors = emptyFormErrors()
       this.form = { ...emptyForm(), id: this.nextId(), parentId: parentId || '' }
-      this.showForm = true
+      // O botão "Adicionar unidade raiz" chama openAddForm(''); nesse caso
+      // não há unidade pai possível e o campo fica opcional.
+      this.allowRootParent = !parentId
+      this.modalInstance.show()
     },
 
     openEditForm(id) {
       const item = this.items.find((i) => i.id === id)
       if (!item) return
       this.formMode = 'edit'
-      this.formError = ''
+      this.formErrors = emptyFormErrors()
       this.form = { ...item }
-      this.showForm = true
+      this.allowRootParent = !item.parentId
+      this.modalInstance.show()
+    },
+
+    resetForm() {
+      this.form = emptyForm()
+      this.formErrors = emptyFormErrors()
+      this.allowRootParent = false
     },
 
     cancelForm() {
-      this.showForm = false
+      this.modalInstance.hide()
+    },
+
+    validateForm() {
+      const errors = emptyFormErrors()
+
+      if (!this.form.parentId && !this.allowRootParent) {
+        errors.parentId = 'Unidade pai é obrigatória.'
+      }
+      if (!this.form.siglaUnidade.trim()) {
+        errors.siglaUnidade = 'Sigla é obrigatória.'
+      }
+      if (!this.form.nomeUnidade.trim()) {
+        errors.nomeUnidade = 'Nome da unidade é obrigatório.'
+      }
+      if (!this.form.simboloQuantidadeCargos.trim()) {
+        errors.simboloQuantidadeCargos = 'Símbolo é obrigatório.'
+      }
+
+      this.formErrors = errors
+      return Object.values(errors).every((message) => !message)
     },
 
     saveForm() {
-      const sigla = this.form.siglaUnidade.trim()
-      const nome = this.form.nomeUnidade.trim()
-      if (!sigla || !nome) {
-        this.formError = 'Sigla e nome são obrigatórios.'
-        return
-      }
+      if (!this.validateForm()) return
 
       const payload = {
         id: this.form.id,
         parentId: this.form.parentId,
-        siglaUnidade: sigla,
-        nomeUnidade: nome,
+        siglaUnidade: this.form.siglaUnidade.trim(),
+        nomeUnidade: this.form.nomeUnidade.trim(),
         simboloQuantidadeCargos: this.form.simboloQuantidadeCargos.trim(),
       }
 
@@ -185,7 +227,7 @@ export default {
         if (idx !== -1) this.items.splice(idx, 1, payload)
       }
 
-      this.showForm = false
+      this.modalInstance.hide()
       this.rebuild()
     },
 
@@ -200,7 +242,7 @@ export default {
 
       this.items = this.items.filter((item) => !toRemove.has(item.id))
       if (toRemove.has(this.selectedId)) this.selectedId = null
-      if (toRemove.has(this.form.id)) this.showForm = false
+      if (toRemove.has(this.form.id)) this.modalInstance.hide()
       this.rebuild()
     },
   },
