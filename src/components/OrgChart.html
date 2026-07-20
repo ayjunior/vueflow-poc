@@ -41,6 +41,17 @@
           <div class="org-node__sigla">{{ data.sigla }}</div>
           <div class="org-node__nome">{{ data.nome }}</div>
           <div class="org-node__simbolo">{{ data.simbolo }}</div>
+
+          <button
+            v-if="data.childCount > 0"
+            type="button"
+            class="org-node__toggle nodrag nopan"
+            :title="data.collapsed ? 'Expandir subordinadas' : 'Recolher subordinadas'"
+            @click.stop="toggleCollapse(id)"
+          >
+            <span class="org-node__toggle-icon">{{ data.collapsed ? '▼' : '▲' }}</span>
+            <span>{{ data.childCount }}</span>
+          </button>
         </div>
       </template>
 

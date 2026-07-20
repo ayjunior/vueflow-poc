@@ -58,15 +58,29 @@ const defaultChartData = [
   },
 ]
 
-// Layout simples de árvore: folhas são posicionadas da esquerda para a
-// direita, e cada nó pai fica centralizado sobre seus filhos.
-function buildTreePositions(items) {
+function groupByParent(items) {
   const childrenByParent = new Map()
   items.forEach((item) => {
     const key = item.parentId || ''
     if (!childrenByParent.has(key)) childrenByParent.set(key, [])
     childrenByParent.get(key).push(item)
   })
+  return childrenByParent
+}
+
+// Estado inicial de recolhimento: só o primeiro nível (filhos das raízes)
+// fica visível; qualquer unidade com filhos própria já nasce recolhida.
+function defaultCollapsedIds(items) {
+  const childrenByParent = groupByParent(items)
+  return new Set(
+    items.filter((item) => item.parentId && childrenByParent.has(item.id)).map((item) => item.id)
+  )
+}
+
+// Layout simples de árvore: folhas são posicionadas da esquerda para a
+// direita, e cada nó pai fica centralizado sobre seus filhos.
+function buildTreePositions(items) {
+  const childrenByParent = groupByParent(items)
 
   const positions = new Map()
   let cursor = 0
@@ -111,6 +125,8 @@ export default {
       items: defaultChartData.map((item) => ({ ...item })),
       nodes: [],
       edges: [],
+      // Ids de unidades cujos filhos estão ocultos.
+      collapsedIds: defaultCollapsedIds(defaultChartData),
       selectedId: null,
       formMode: 'add',
       form: emptyForm(),
@@ -149,9 +165,39 @@ export default {
     this.modalInstance?.dispose()
   },
   methods: {
+    // Unidades visíveis: percorre a árvore a partir das raízes e só desce
+    // para os filhos de um nó se ele não estiver recolhido.
+    visibleItems() {
+      const childrenByParent = groupByParent(this.items)
+      const result = []
+      const walk = (parentKey) => {
+        const kids = childrenByParent.get(parentKey) || []
+        kids.forEach((kid) => {
+          result.push(kid)
+          if (!this.collapsedIds.has(kid.id)) walk(kid.id)
+        })
+      }
+      walk('')
+      return result
+    },
+
+    childCount(id) {
+      return this.items.filter((item) => item.parentId === id).length
+    },
+
+    toggleCollapse(id) {
+      if (this.collapsedIds.has(id)) {
+        this.collapsedIds.delete(id)
+      } else {
+        this.collapsedIds.add(id)
+      }
+      this.rebuild()
+    },
+
     rebuild() {
-      const positions = buildTreePositions(this.items)
-      this.nodes = this.items.map((item) => ({
+      const visible = this.visibleItems()
+      const positions = buildTreePositions(visible)
+      this.nodes = visible.map((item) => ({
         id: item.id,
         type: 'org',
         position: positions.get(item.id) || { x: 0, y: 0 },
@@ -159,12 +205,14 @@ export default {
           sigla: item.siglaUnidade,
           nome: item.nomeUnidade,
           simbolo: item.simboloQuantidadeCargos,
+          childCount: this.childCount(item.id),
+          collapsed: this.collapsedIds.has(item.id),
         },
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
       }))
 
-      this.edges = this.items
+      this.edges = visible
         .filter((item) => item.parentId)
         .map((item) => ({
           id: `e${item.parentId}-${item.id}`,
@@ -266,6 +314,9 @@ export default {
 
       if (this.formMode === 'add') {
         this.items.push(payload)
+        // Se a unidade pai estava recolhida, expande para que a nova
+        // subordinada fique visível imediatamente.
+        if (payload.parentId) this.collapsedIds.delete(payload.parentId)
       } else {
         const idx = this.items.findIndex((item) => item.id === payload.id)
         if (idx !== -1) this.items.splice(idx, 1, payload)
