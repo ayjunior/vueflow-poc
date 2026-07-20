@@ -85,4 +85,16 @@
   &__toggle-icon {
     font-size: 0.55rem;
   }
+
+  // Alças de conexão para vincular unidades por arrastar e soltar.
+  &__handle {
+    width: 8px;
+    height: 8px;
+    background: #4a6fa5;
+    border: 2px solid #fff;
+
+    &:hover {
+      background: #ffb703;
+    }
+  }
 }

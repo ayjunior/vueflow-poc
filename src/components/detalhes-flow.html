@@ -14,10 +14,16 @@
       :min-zoom="0.1"
       :max-zoom="2"
       fit-view-on-init
+      :delete-key-code="null"
       @node-click="onNodeClick"
+      @connect="onConnect"
+      :is-valid-connection="isValidConnection"
     >
       <template #node-org="{ id, data }">
         <div class="org-node" :class="{ 'org-node--selected': id === selectedId }">
+          <Handle type="target" position="top" class="org-node__handle" />
+          <Handle type="source" position="bottom" class="org-node__handle" />
+
           <div class="org-node__actions nodrag nopan">
             <button
               type="button"

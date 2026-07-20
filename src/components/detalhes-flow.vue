@@ -1,7 +1,7 @@
 <template src="./detalhes-flow.html"></template>
 
 <script>
-import { VueFlow, Position, useVueFlow } from '@vue-flow/core'
+import { VueFlow, Position, Handle, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
@@ -115,7 +115,7 @@ function emptyFormErrors() {
 
 export default {
   name: 'OrgChart',
-  components: { VueFlow, Background, Controls, MiniMap },
+  components: { VueFlow, Background, Controls, MiniMap, Handle },
   setup() {
     const { updateNodeInternals } = useVueFlow('org-chart-flow')
     return { updateNodeInternals }
@@ -228,6 +228,28 @@ export default {
 
     onNodeClick({ node }) {
       this.selectedId = node.id
+    },
+
+    // Impede vincular um nó a si mesmo ou a um de seus próprios
+    // descendentes, o que criaria um ciclo na árvore.
+    isValidConnection({ source, target }) {
+      if (!source || !target || source === target) return false
+      return !this.descendantIds(target).includes(source)
+    },
+
+    // Arrastar e soltar de um nó para outro reatribui a unidade pai:
+    // o nó de origem (alça inferior) passa a ser o novo pai do nó de
+    // destino (alça superior), substituindo o vínculo anterior.
+    onConnect({ source, target }) {
+      if (!this.isValidConnection({ source, target })) return
+
+      const idx = this.items.findIndex((item) => item.id === target)
+      if (idx === -1 || this.items[idx].parentId === source) return
+
+      this.items.splice(idx, 1, { ...this.items[idx], parentId: source })
+      // Garante que a unidade recém-vinculada fique visível de imediato.
+      this.collapsedIds.delete(source)
+      this.rebuild()
     },
 
     descendantIds(id) {
