@@ -1,4 +1,4 @@
-<template src="./OrgChart.html"></template>
+<template src="./detalhes-flow.html"></template>
 
 <script>
 import { VueFlow, Position, useVueFlow } from '@vue-flow/core'
@@ -344,4 +344,4 @@ export default {
 }
 </script>
 
-<style scoped src="./OrgChart.scss" lang="scss"></style>
+<style scoped src="./detalhes-flow.scss" lang="scss"></style>

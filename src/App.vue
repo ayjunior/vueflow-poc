@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import OrgChart from './components/OrgChart.vue'
+import OrgChart from './components/detalhes-flow.vue'
 
 export default {
   name: 'App',
