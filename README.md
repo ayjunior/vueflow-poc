@@ -1,18 +1,36 @@
-# Vue Flow POC
+# Vue Flow POC — Organograma
 
 Projeto de prova de conceito (POC) usando [Vue Flow](https://vueflow.dev/)
 com Vue 3 (Options API) e Bootstrap 5, montado com Vite.
 
 ## O que tem aqui
 
-Um diagrama básico de nós e arestas:
+Um organograma hierárquico interativo, montado a partir de uma lista plana
+de unidades (`id` / `parentId`). O componente calcula o layout em árvore e
+o desenha com `<VueFlow>`.
 
-- **Início** → **Processo A** → **Fim**
-- **Início** → **Processo B** → **Fim**
+Funcionalidades:
 
-O componente principal está em `src/components/FlowDiagram.vue`. Os nós e
-arestas são definidos em `data()`, no formato que o Vue Flow espera
-(`nodes` e `edges`), e passados via `v-model` para o componente `<VueFlow>`.
+- **CRUD de unidades** via modal Bootstrap (adicionar unidade raiz, adicionar
+  subordinada, editar, remover — com validação por campo e remoção em
+  cascata dos descendentes).
+- **Expandir/recolher subárvores**: por padrão só o primeiro nível fica
+  visível; cada nó com filhos mostra um badge (▲/▼ + contador) sobre a
+  borda inferior, que alterna a exibição dos descendentes.
+- **Reatribuir unidade pai por drag-and-drop**: arraste a partir da alça
+  inferior de um nó (fonte) e solte na alça superior de outro (destino)
+  para tornar o primeiro o novo pai do segundo, substituindo o vínculo
+  anterior. Conexões que criariam ciclo (soltar sobre um descendente do
+  próprio nó) são bloqueadas.
+- Tecla **Backspace/Delete** desabilitada para apagar nós/arestas
+  selecionados — a remoção só acontece pelo botão dedicado, que já cuida
+  de confirmação e remoção em cascata.
+
+O componente principal está em `src/components/detalhes-flow.vue`, com o
+template em `detalhes-flow.html` e os estilos em `detalhes-flow.scss`. Os
+dados de exemplo e a lógica de layout/estado ficam em `detalhes-flow.vue`;
+`nodes` e `edges` (no formato que o Vue Flow espera) são recalculados a
+partir da lista de unidades e passados via `v-model` para `<VueFlow>`.
 
 ## Como rodar
 
@@ -45,15 +63,17 @@ vueflow-poc/
 ├── package.json
 ├── vite.config.js
 └── src/
-    ├── main.js              # entrada da app, importa CSS do Bootstrap e do Vue Flow
-    ├── App.vue               # componente raiz
+    ├── main.js                  # entrada da app, importa CSS do Bootstrap e do Vue Flow
+    ├── App.vue                  # componente raiz
     └── components/
-        └── FlowDiagram.vue   # o diagrama Vue Flow em si
+        ├── detalhes-flow.vue    # lógica: dados, layout em árvore, expandir/recolher, drag-and-drop
+        ├── detalhes-flow.html   # template: <VueFlow>, nó customizado, modal de formulário
+        └── detalhes-flow.scss   # estilos do nó, badge de contagem e handles de conexão
 ```
 
 ## Próximos passos possíveis
 
-- Nós customizados (com `#node-<tipo>` slots ou componentes de nó próprios)
-- Painel lateral para adicionar/remover nós dinamicamente (drag-and-drop)
-- Persistência do layout (salvar posições em backend/localStorage)
-- Validação de conexões (`connectable`, `isValidConnection`)
+- Persistência do layout/dados (salvar em backend ou `localStorage`)
+- Painel lateral com busca/filtro de unidades
+- Exportar o organograma (imagem ou PDF)
+- Desfazer/refazer (undo/redo) para edições e reatribuições de pai
