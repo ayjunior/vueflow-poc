@@ -1,10 +1,4 @@
 <div class="org-chart">
-  <div class="d-flex justify-content-end mb-2">
-    <button type="button" class="btn btn-sm btn-primary" @click="openAddForm('')">
-      + Adicionar unidade raiz
-    </button>
-  </div>
-
   <div class="flow-wrapper border rounded shadow-sm">
     <VueFlow
       id="org-chart-flow"
@@ -16,34 +10,9 @@
       fit-view-on-init
       :delete-key-code="null"
       @node-click="onNodeClick"
-      @connect="onConnect"
-      :is-valid-connection="isValidConnection"
     >
       <template #node-org="{ id, data }">
         <div class="org-node" :class="{ 'org-node--selected': id === selectedId }">
-          <Handle type="target" position="top" class="org-node__handle" />
-          <Handle type="source" position="bottom" class="org-node__handle" />
-
-          <div class="org-node__actions nodrag nopan">
-            <button
-              type="button"
-              class="btn btn-outline-primary"
-              title="Adicionar subordinada"
-              @click.stop="openAddForm(id)"
-            >+</button>
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              title="Editar"
-              @click.stop="openEditForm(id)"
-            >✎</button>
-            <button
-              type="button"
-              class="btn btn-outline-danger"
-              title="Remover"
-              @click.stop="removeNode(id)"
-            >✕</button>
-          </div>
           <div class="org-node__sigla">{{ data.sigla }}</div>
           <div class="org-node__nome">{{ data.nome }}</div>
           <div class="org-node__simbolo">{{ data.simbolo }}</div>
@@ -65,72 +34,5 @@
       <Controls />
       <MiniMap pannable zoomable />
     </VueFlow>
-  </div>
-
-  <div class="modal fade" tabindex="-1" ref="formModal" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form novalidate @submit.prevent="saveForm">
-          <div class="modal-header">
-            <h2 class="h6 modal-title mb-0">
-              {{ formMode === 'add' ? 'Adicionar unidade' : 'Editar unidade' }}
-            </h2>
-            <button type="button" class="btn-close" aria-label="Fechar" @click="cancelForm"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row g-2">
-              <div class="col-md-6">
-                <label class="form-label small">Unidade pai *</label>
-                <select
-                  class="form-select form-select-sm"
-                  :class="{ 'is-invalid': formErrors.parentId }"
-                  v-model="form.parentId"
-                >
-                  <option value="">— (raiz)</option>
-                  <option v-for="opt in parentOptions" :key="opt.id" :value="opt.id">
-                    {{ opt.siglaUnidade }} — {{ opt.nomeUnidade }}
-                  </option>
-                </select>
-                <div class="invalid-feedback">{{ formErrors.parentId }}</div>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small">Sigla *</label>
-                <input
-                  type="text"
-                  class="form-control form-control-sm"
-                  :class="{ 'is-invalid': formErrors.siglaUnidade }"
-                  v-model="form.siglaUnidade"
-                />
-                <div class="invalid-feedback">{{ formErrors.siglaUnidade }}</div>
-              </div>
-              <div class="col-md-8">
-                <label class="form-label small">Nome da unidade *</label>
-                <input
-                  type="text"
-                  class="form-control form-control-sm"
-                  :class="{ 'is-invalid': formErrors.nomeUnidade }"
-                  v-model="form.nomeUnidade"
-                />
-                <div class="invalid-feedback">{{ formErrors.nomeUnidade }}</div>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small">Símbolo *</label>
-                <input
-                  type="text"
-                  class="form-control form-control-sm"
-                  :class="{ 'is-invalid': formErrors.simboloQuantidadeCargos }"
-                  v-model="form.simboloQuantidadeCargos"
-                />
-                <div class="invalid-feedback">{{ formErrors.simboloQuantidadeCargos }}</div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-sm btn-outline-secondary" @click="cancelForm">Cancelar</button>
-            <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </div>

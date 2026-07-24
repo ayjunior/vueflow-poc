@@ -1,11 +1,10 @@
 <template src="./detalhes-flow.html"></template>
 
 <script>
-import { VueFlow, Position, Handle, useVueFlow } from '@vue-flow/core'
+import { VueFlow, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
-import { Modal } from 'bootstrap'
 
 // Dimensões usadas para espaçar os nós na árvore
 const NODE_WIDTH = 200
@@ -129,17 +128,9 @@ function buildTreePositions(items) {
   return positions
 }
 
-function emptyForm() {
-  return { id: '', parentId: '', siglaUnidade: '', nomeUnidade: '', simboloQuantidadeCargos: '' }
-}
-
-function emptyFormErrors() {
-  return { parentId: '', siglaUnidade: '', nomeUnidade: '', simboloQuantidadeCargos: '' }
-}
-
 export default {
   name: 'OrgChart',
-  components: { VueFlow, Background, Controls, MiniMap, Handle },
+  components: { VueFlow, Background, Controls, MiniMap },
   setup() {
     const { updateNodeInternals } = useVueFlow('org-chart-flow')
     return { updateNodeInternals }
@@ -152,24 +143,7 @@ export default {
       // Ids de unidades cujos filhos estão ocultos.
       collapsedIds: defaultCollapsedIds(defaultChartData),
       selectedId: null,
-      formMode: 'add',
-      form: emptyForm(),
-      formErrors: emptyFormErrors(),
-      // Só uma unidade raiz (sem unidade pai) pode ficar com "Unidade pai" em
-      // branco; para as demais o campo é obrigatório.
-      allowRootParent: false,
-      modalInstance: null,
     }
-  },
-  computed: {
-    // Opções válidas de unidade pai: exclui o próprio nó (em edição) e seus
-    // descendentes, para não permitir ciclos na árvore.
-    parentOptions() {
-      const excluded = new Set(
-        this.formMode === 'edit' ? [this.form.id, ...this.descendantIds(this.form.id)] : []
-      )
-      return this.items.filter((item) => !excluded.has(item.id))
-    },
   },
   created() {
     this.rebuild()
@@ -178,15 +152,6 @@ export default {
     // No carregamento inicial o Vue Flow pode medir os nós antes do child
     // estar totalmente pronto; força uma remedição após montar.
     this.$nextTick(() => this.updateNodeInternals())
-
-    this.modalInstance = new Modal(this.$refs.formModal)
-    // Cobre fechamento via ESC, clique no backdrop ou botão "x", que não
-    // passam por cancelForm()/saveForm().
-    this.$refs.formModal.addEventListener('hidden.bs.modal', this.resetForm)
-  },
-  beforeUnmount() {
-    this.$refs.formModal.removeEventListener('hidden.bs.modal', this.resetForm)
-    this.modalInstance?.dispose()
   },
   methods: {
     // Unidades visíveis: percorre a árvore a partir das raízes e só desce
@@ -252,139 +217,6 @@ export default {
 
     onNodeClick({ node }) {
       this.selectedId = node.id
-    },
-
-    // Impede vincular um nó a si mesmo ou a um de seus próprios
-    // descendentes, o que criaria um ciclo na árvore.
-    isValidConnection({ source, target }) {
-      if (!source || !target || source === target) return false
-      return !this.descendantIds(target).includes(source)
-    },
-
-    // Arrastar e soltar de um nó para outro reatribui a unidade pai:
-    // o nó de origem (alça inferior) passa a ser o novo pai do nó de
-    // destino (alça superior), substituindo o vínculo anterior.
-    onConnect({ source, target }) {
-      if (!this.isValidConnection({ source, target })) return
-
-      const idx = this.items.findIndex((item) => item.id === target)
-      if (idx === -1 || this.items[idx].parentId === source) return
-
-      this.items.splice(idx, 1, { ...this.items[idx], parentId: source })
-      // Garante que a unidade recém-vinculada fique visível de imediato.
-      this.collapsedIds.delete(source)
-      this.rebuild()
-    },
-
-    descendantIds(id) {
-      const result = []
-      const stack = [id]
-      while (stack.length) {
-        const current = stack.pop()
-        this.items.forEach((item) => {
-          if (item.parentId === current) {
-            result.push(item.id)
-            stack.push(item.id)
-          }
-        })
-      }
-      return result
-    },
-
-    nextId() {
-      const numericIds = this.items.map((item) => Number(item.id)).filter((n) => !Number.isNaN(n))
-      const max = numericIds.length ? Math.max(...numericIds) : 0
-      return String(max + 1)
-    },
-
-    openAddForm(parentId) {
-      this.formMode = 'add'
-      this.formErrors = emptyFormErrors()
-      this.form = { ...emptyForm(), id: this.nextId(), parentId: parentId || '' }
-      // O botão "Adicionar unidade raiz" chama openAddForm(''); nesse caso
-      // não há unidade pai possível e o campo fica opcional.
-      this.allowRootParent = !parentId
-      this.modalInstance.show()
-    },
-
-    openEditForm(id) {
-      const item = this.items.find((i) => i.id === id)
-      if (!item) return
-      this.formMode = 'edit'
-      this.formErrors = emptyFormErrors()
-      this.form = { ...item }
-      this.allowRootParent = !item.parentId
-      this.modalInstance.show()
-    },
-
-    resetForm() {
-      this.form = emptyForm()
-      this.formErrors = emptyFormErrors()
-      this.allowRootParent = false
-    },
-
-    cancelForm() {
-      this.modalInstance.hide()
-    },
-
-    validateForm() {
-      const errors = emptyFormErrors()
-
-      if (!this.form.parentId && !this.allowRootParent) {
-        errors.parentId = 'Unidade pai é obrigatória.'
-      }
-      if (!this.form.siglaUnidade.trim()) {
-        errors.siglaUnidade = 'Sigla é obrigatória.'
-      }
-      if (!this.form.nomeUnidade.trim()) {
-        errors.nomeUnidade = 'Nome da unidade é obrigatório.'
-      }
-      if (!this.form.simboloQuantidadeCargos.trim()) {
-        errors.simboloQuantidadeCargos = 'Símbolo é obrigatório.'
-      }
-
-      this.formErrors = errors
-      return Object.values(errors).every((message) => !message)
-    },
-
-    saveForm() {
-      if (!this.validateForm()) return
-
-      const payload = {
-        id: this.form.id,
-        parentId: this.form.parentId,
-        siglaUnidade: this.form.siglaUnidade.trim(),
-        nomeUnidade: this.form.nomeUnidade.trim(),
-        simboloQuantidadeCargos: this.form.simboloQuantidadeCargos.trim(),
-      }
-
-      if (this.formMode === 'add') {
-        this.items.push(payload)
-        // Se a unidade pai estava recolhida, expande para que a nova
-        // subordinada fique visível imediatamente.
-        if (payload.parentId) this.collapsedIds.delete(payload.parentId)
-      } else {
-        const idx = this.items.findIndex((item) => item.id === payload.id)
-        if (idx !== -1) this.items.splice(idx, 1, payload)
-      }
-
-      this.modalInstance.hide()
-      this.rebuild()
-    },
-
-    removeNode(id) {
-      const toRemove = new Set([id, ...this.descendantIds(id)])
-      const confirmed = window.confirm(
-        toRemove.size > 1
-          ? `Remover esta unidade também removerá ${toRemove.size - 1} unidade(s) subordinada(s). Continuar?`
-          : 'Remover esta unidade?'
-      )
-      if (!confirmed) return
-
-      this.items = this.items.filter((item) => !toRemove.has(item.id))
-      if (toRemove.has(this.selectedId)) this.selectedId = null
-      if (toRemove.has(this.form.id)) this.modalInstance.hide()
-      this.rebuild()
     },
   },
 }

@@ -18,27 +18,6 @@
     box-shadow: 0 0 0 2px rgba(255, 183, 3, 0.35);
   }
 
-  &__actions {
-    position: absolute;
-    top: -14px;
-    right: -6px;
-    display: flex;
-    gap: 2px;
-    opacity: 0;
-    transition: opacity 0.15s ease-in-out;
-
-    .btn {
-      padding: 0 5px;
-      line-height: 1.5;
-      font-size: 0.7rem;
-    }
-  }
-
-  &:hover .org-node__actions,
-  &--selected .org-node__actions {
-    opacity: 1;
-  }
-
   &__sigla {
     font-weight: 700;
     font-size: 0.9rem;
@@ -84,17 +63,5 @@
 
   &__toggle-icon {
     font-size: 0.55rem;
-  }
-
-  // Alças de conexão para vincular unidades por arrastar e soltar.
-  &__handle {
-    width: 8px;
-    height: 8px;
-    background: #4a6fa5;
-    border: 2px solid #fff;
-
-    &:hover {
-      background: #ffb703;
-    }
   }
 }
