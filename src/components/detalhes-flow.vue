@@ -5,57 +5,13 @@ import { VueFlow, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
+import { defaultChartData } from '../data/defaultChartData'
 
 // Dimensões usadas para espaçar os nós na árvore
 const NODE_WIDTH = 200
 const NODE_HEIGHT = 90
 const H_GAP = 40
 const V_GAP = 90
-
-const defaultChartData = [
-  {
-    id: '1',
-    parentId: '',
-    siglaUnidade: 'PMC',
-    nomeUnidade: 'Prefeitura de Curitiba',
-    simboloQuantidadeCargos: 'NS-01',
-  },
-  {
-    id: '2',
-    parentId: '1',
-    siglaUnidade: 'SEC1',
-    nomeUnidade: 'Secretaria 1',
-    simboloQuantidadeCargos: 'NS-01',
-  },
-  {
-    id: '3',
-    parentId: '1',
-    siglaUnidade: 'SEC2',
-    nomeUnidade: 'Secretaria 2',
-    simboloQuantidadeCargos: 'NS-01',
-  },
-  {
-    id: '4',
-    parentId: '2',
-    siglaUnidade: 'DEP1',
-    nomeUnidade: 'Departamento 1',
-    simboloQuantidadeCargos: 'NS-01',
-  },
-  {
-    id: '5',
-    parentId: '2',
-    siglaUnidade: 'DEP2',
-    nomeUnidade: 'Departamento 2',
-    simboloQuantidadeCargos: 'NS-01',
-  },
-  {
-    id: '6',
-    parentId: '3',
-    siglaUnidade: 'DEP3',
-    nomeUnidade: 'Departamento 3',
-    simboloQuantidadeCargos: 'NS-01',
-  },
-]
 
 function groupByParent(items) {
   const childrenByParent = new Map()
@@ -69,7 +25,7 @@ function groupByParent(items) {
 
 // Quantidade de níveis visíveis no carregamento inicial (raiz = nível 0).
 // Ex.: 2 mostra raízes + filhos diretos; níveis abaixo disso nascem recolhidos.
-const INITIAL_VISIBLE_LEVELS = 3
+const INITIAL_VISIBLE_LEVELS = 2
 
 // Profundidade de cada item na árvore, calculada a partir das raízes.
 function computeDepths(items) {
