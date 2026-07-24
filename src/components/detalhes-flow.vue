@@ -68,12 +68,36 @@ function groupByParent(items) {
   return childrenByParent
 }
 
-// Estado inicial de recolhimento: só o primeiro nível (filhos das raízes)
-// fica visível; qualquer unidade com filhos própria já nasce recolhida.
-function defaultCollapsedIds(items) {
+// Quantidade de níveis visíveis no carregamento inicial (raiz = nível 0).
+// Ex.: 2 mostra raízes + filhos diretos; níveis abaixo disso nascem recolhidos.
+const INITIAL_VISIBLE_LEVELS = 3
+
+// Profundidade de cada item na árvore, calculada a partir das raízes.
+function computeDepths(items) {
   const childrenByParent = groupByParent(items)
+  const depths = new Map()
+
+  function walk(parentKey, depth) {
+    const kids = childrenByParent.get(parentKey) || []
+    kids.forEach((kid) => {
+      depths.set(kid.id, depth)
+      walk(kid.id, depth + 1)
+    })
+  }
+
+  walk('', 0)
+  return depths
+}
+
+// Estado inicial de recolhimento: unidades a partir de INITIAL_VISIBLE_LEVELS
+// já nascem recolhidas, escondendo os níveis seguintes.
+function defaultCollapsedIds(items, visibleLevels = INITIAL_VISIBLE_LEVELS) {
+  const childrenByParent = groupByParent(items)
+  const depths = computeDepths(items)
   return new Set(
-    items.filter((item) => item.parentId && childrenByParent.has(item.id)).map((item) => item.id)
+    items
+      .filter((item) => childrenByParent.has(item.id) && depths.get(item.id) >= visibleLevels - 1)
+      .map((item) => item.id)
   )
 }
 
