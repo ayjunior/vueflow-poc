@@ -2,8 +2,8 @@
 // diretos, e as 3.564 unidades restantes são distribuídas em níveis
 // subsequentes (largura limitada por unidade), formando uma árvore grande
 // e profunda para testar performance/virtualização do organograma.
-const TOTAL_NODES = 3600
-const ROOT_CHILDREN = 35
+const TOTAL_NODES = 12600
+const ROOT_CHILDREN = 12
 const BRANCHING_FACTOR = 6
 
 function buildChartData({

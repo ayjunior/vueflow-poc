@@ -5,7 +5,7 @@ import { VueFlow, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
-import { defaultChartData } from '../data/defaultChartData'
+import { defaultChartData } from './data/defaultChartData'
 
 // Dimensões usadas para espaçar os nós na árvore
 const NODE_WIDTH = 200
